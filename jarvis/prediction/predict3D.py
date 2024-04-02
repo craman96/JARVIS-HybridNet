@@ -5,6 +5,9 @@ https://github.com/JARVIS-MoCap/JARVIS-HybridNet
 Licensed under GNU Lesser General Public License v2.1
 """
 
+# Should be able to pass dir struct
+# Session/cameras/cam1,cam2,cam3...camN/trialN/vid.mp4
+
 import os
 import csv
 import itertools
@@ -143,7 +146,7 @@ def predict3D(params, marker_dir=None, trial_name=None, confidence_threshold=0):
 def create_video_reader(params, reproTool, video_paths):
     caps = []
     img_size = [0,0]
-    for i,path in enumerate(video_paths):
+    for i, path in enumerate(video_paths):
         cap = cv2.VideoCapture(path)
         cap.set(1,params.frame_start)
         img_size_new = [int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
@@ -156,7 +159,20 @@ def create_video_reader(params, reproTool, video_paths):
     return caps, img_size
 
 
+def get_video_paths_uchi_dir_struct(recording_path, reproTool):
+    videos = [f for f in os.listdir(recording_path) if f.endswith('.mp4')]
+    video_paths = []
+    for i, camera in enumerate(reproTool.cameras):
+        for video in videos:
+            if camera == video.split('.')[0]:
+                video_paths.append(os.path.join(recording_path, video))
+        assert (len(video_paths) == i+1), \
+                    "Missing Recording for camera " + camera
+    return video_paths
+
+
 def get_video_paths(recording_path, reproTool):
+    pdb.set_trace()
     videos = os.listdir(recording_path)
     video_paths = []
     for i, camera in enumerate(reproTool.cameras):
