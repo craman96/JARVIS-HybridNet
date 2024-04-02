@@ -30,6 +30,10 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
 class EfficientTrack:
+
+    # CR created, class var to keep track of current prog bar position
+    current_bar_position = 0
+
     """
     EfficientTrack convenience class, enables easy training and inference with
     using the EfficientTrack Module.
@@ -41,7 +45,9 @@ class EfficientTrack:
     :param weights: Path to parameter savefile to be loaded
     :type weights: string, optional
     """
-    def __init__(self, mode, cfg, weights = None, run_name = None):
+    def __init__(self, mode, cfg, weights = None, run_name = None, bar_position = 0, bar_desc=''):
+        self.bar_position = bar_position
+        self.bar_desc = bar_desc
         self.mode = mode
         self.main_cfg = cfg
         if mode == 'CenterDetect' or mode == 'CenterDetectInference':
@@ -250,7 +256,7 @@ class EfficientTrack:
             streamlitWidgets[2].markdown(f"Epoch {1}/{num_epochs}")
 
         for epoch in range(num_epochs):
-            progress_bar = tqdm(training_generator)
+            progress_bar = tqdm(training_generator, position=self.bar_position, leave=True)
             for count,data in enumerate(progress_bar):
                 imgs = data[0].permute(0, 3, 1, 2).float()
                 heatmaps = data[1]
@@ -282,8 +288,8 @@ class EfficientTrack:
                     self.accuracyMeter.update(acc)
 
                 progress_bar.set_description(
-                    'Epoch: {}/{}. Loss: {:.5f}. Acc: {:1.3f}'.format(
-                        epoch+1, num_epochs, self.lossMeter.read(),
+                    '{} Epoch: {}/{}. Loss: {:.5f}. Acc: {:1.3f}'.format(
+                        self.bar_desc, epoch+1, num_epochs, self.lossMeter.read(),
                         self.accuracyMeter.read()))
                 if streamlitWidgets != None:
                     streamlitWidgets[1].progress(float(count + 1)

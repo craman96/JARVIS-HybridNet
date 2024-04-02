@@ -58,6 +58,10 @@ def train_efficienttrack(mode, project_name, num_epochs, weights,
         camera_list = kwargs['cameras_to_use']
     if 'run_name' in kwargs:
         run_name = kwargs['run_name']
+    if 'bar_desc' in kwargs:
+        bar_desc=kwargs['bar_desc']
+    if 'bar_position' in kwargs:
+        bar_position=kwargs['bar_position']
     with ExitStack() as stack:
         if streamlitWidgets != None:
             gs = stack.enter_context(st.spinner('Preparing Model for '
@@ -85,7 +89,7 @@ def train_efficienttrack(mode, project_name, num_epochs, weights,
         val_set = Dataset2D(project.cfg, set='val',mode = mode,
                     cameras_to_use = camera_list)
         efficientTrack = EfficientTrack(mode, project.cfg,
-                    run_name = run_name)
+                    run_name = run_name, bar_position = bar_position, bar_desc=bar_desc)
 
 
         pose_pretrain_list = get_available_pretrains(project.cfg.PARENT_DIR)
@@ -129,6 +133,12 @@ def train_hybridnet(project_name, num_epochs, weights_keypoint_detect, weights,
         camera_list = kwargs['cameras_to_use']
     if 'run_name' in kwargs:
         run_name = kwargs['run_name']
+    if 'bar_desc' in kwargs:
+        bar_desc=kwargs['bar_desc']
+    if 'bar_position' in kwargs:
+        bar_position=kwargs['bar_position']
+
+
     with ExitStack() as stack:
         if streamlitWidgets != None:
             gs = stack.enter_context(st.spinner('Preparing Model for '
@@ -153,7 +163,7 @@ def train_hybridnet(project_name, num_epochs, weights_keypoint_detect, weights,
         val_set = Dataset3D(project.cfg, set='val',
                     cameras_to_use = camera_list)
         hybridNet = HybridNet('train', project.cfg,
-                    run_name = run_name)
+                    run_name = run_name, bar_position=bar_position, bar_desc=bar_desc)
 
         effTrack = hybridNet.model.effTrack
 

@@ -17,6 +17,8 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 import time
 from ruamel.yaml import YAML
+import pdb
+import pandas as pd
 
 from jarvis.utils.reprojection import ReprojectionTool, load_reprojection_tools
 from jarvis.utils.reprojection import get_repro_tool
@@ -24,7 +26,7 @@ from jarvis.config.project_manager import ProjectManager
 from jarvis.prediction.jarvis3D import JarvisPredictor3D
 
 
-def predict3D(params):
+def predict3D(params, marker_dir=None, trial_name=None, confidence_threshold=0):
     #Load project and config
     project = ProjectManager()
     if not project.load(params.project_name):
@@ -38,10 +40,14 @@ def predict3D(params):
 
     reproTool = get_repro_tool(cfg, params.dataset_name)
 
-    params.output_dir = os.path.join(project.parent_dir,
-                cfg.PROJECTS_ROOT_PATH, params.project_name,
-                'predictions', 'predictions3D',
-                f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}')
+    # params.output_dir = os.path.join(project.parent_dir,
+    #             cfg.PROJECTS_ROOT_PATH, params.project_name,
+    #             'predictions', 'predictions3D',
+    #             f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}')
+
+    params.output_dir = os.path.join(
+        params.output_dir,
+          'markers_3D_jarvis')  # THIS OVERWRITES EVERYTIME SINCE NO TIMESTAMP
 
     os.makedirs(params.output_dir, exist_ok = True)
     create_info_file(params)
@@ -52,19 +58,29 @@ def predict3D(params):
     caps, img_size = create_video_reader(params, reproTool,
                 video_paths)
 
+    # CR EDIT: make the number of frames go only until the end of the SHORTEST CAP so we
+    # don't have to truncate the vids manually
+    frame_counts = [c.get(cv2.CAP_PROP_FRAME_COUNT) for c in caps]
+    min_frame_count = frame_counts[0]
+    if frame_counts.count(frame_counts[0]) != len(frame_counts):
+        # Then there are varying frame lens
+        min_frame_count = int(min(frame_counts))
+        print("Varying frame lengths found only analyzing up to the shortest" \
+               f" vid (n frames = {min_frame_count})")
+
     if (params.number_frames == -1):
-        params.number_frames = (int(caps[0].get(cv2.CAP_PROP_FRAME_COUNT))
-                    - params.frame_start)
+        params.number_frames = min_frame_count - params.frame_start
     else:
         assert params.frame_start+params.number_frames \
-                    <= caps[0].get(cv2.CAP_PROP_FRAME_COUNT), \
+                    <= min_frame_count, \
                     "make sure your selected segment is not " \
                     "longer that the total video!"
 
-    csvfile = open(os.path.join(params.output_dir, 'data3D.csv'), 'w',
-                newline='')
-    writer = csv.writer(csvfile, delimiter=',',
-                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    csvpath = os.path.join(params.output_dir, f'data3D_{params.trial_num}.csv')
+    print(f"\nCreating file output: {csvpath}\n")
+    csvfile = open(csvpath, 'w', newline='')
+    writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
     #if keypoint names are defined, add header to csvs
     if (len(cfg.KEYPOINT_NAMES) == cfg.KEYPOINTDETECT.NUM_JOINTS):
         create_header(writer, cfg)
@@ -103,6 +119,25 @@ def predict3D(params):
     for cap in caps:
         cap.release()
     csvfile.close()
+
+    # If this is the case we write a new csv to the markers 3d Folder
+    write_sik_df = marker_dir is not None and trial_name is not None
+    if write_sik_df:
+        original_fname = os.path.join(params.output_dir, 'data3D.csv')
+        assert os.path.isfile(original_fname)
+        df = pd.read_csv(params.out)
+        savepath = os.path.join(marker_dir, f'{trial_name}.csv')
+        # Insert a column for coordinates
+        df['bodyparts'] = ['coords', ] + [i for i in range(len(df))][:-1]
+        # Iterate over each body part column
+        for col in df.columns:
+            # Check if the column name ends with '.3' (assuming it contains the confidence values)
+            if col.endswith('.3'):
+                # Replace values with confidence less than the threshold with NaN
+                df.loc[df[col] < confidence_threshold, col[:-2]] = float('nan')
+                # Remove the corresponding .3 column
+                df.drop(col, axis=1, inplace=True)
+        df.to_csv(savepath)
 
 
 def create_video_reader(params, reproTool, video_paths):

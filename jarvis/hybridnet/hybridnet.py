@@ -41,9 +41,11 @@ class HybridNet:
     :type weights: string, optional
     """
     def __init__(self, mode, cfg, weights = None, efficienttrack_weights = None,
-                 run_name = None):
+                 run_name = None, bar_position=0, bar_desc=""):
         self.mode = mode
         self.cfg = cfg
+        self.bar_position = bar_position
+        self.bar_desc = bar_desc
         self.model = HybridNetBackbone(cfg, efficienttrack_weights)
 
         if mode  == 'train':
@@ -188,7 +190,7 @@ class HybridNet:
                         min_lr=0.00005, factor = 0.2)
 
         for epoch in range(num_epochs):
-            progress_bar = tqdm(training_generator)
+            progress_bar = tqdm(training_generator, position=self.bar_position, leave=True)
             for counter, data in enumerate(progress_bar):
                 imgs = data[0].permute(0,1,4,2,3).float()
                 keypoints = data[1]
@@ -241,8 +243,8 @@ class HybridNet:
                 self.accuracyMeter.update(acc.item())
 
                 progress_bar.set_description(
-                    'Epoch: {}/{}. Loss: {:.4f}. Acc: {:.2f}'.format(
-                        epoch+1, num_epochs, self.lossMeter.read(),
+                    '{} Epoch: {}/{}. Loss: {:.4f}. Acc: {:.2f}'.format(
+                        self.bar_desc, epoch+1, num_epochs, self.lossMeter.read(),
                         self.accuracyMeter.read()))
                 if streamlitWidgets != None:
                     streamlitWidgets[1].progress(float(counter+1)
