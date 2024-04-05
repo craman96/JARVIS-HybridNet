@@ -159,26 +159,32 @@ def create_video_reader(params, reproTool, video_paths):
     return caps, img_size
 
 
-def get_video_paths_uchi_dir_struct(recording_path, reproTool):
-    videos = [f for f in os.listdir(recording_path) if f.endswith('.mp4')]
-    video_paths = []
-    for i, camera in enumerate(reproTool.cameras):
-        for video in videos:
-            if camera == video.split('.')[0]:
-                video_paths.append(os.path.join(recording_path, video))
-        assert (len(video_paths) == i+1), \
-                    "Missing Recording for camera " + camera
-    return video_paths
-
-
 def get_video_paths(recording_path, reproTool):
-    pdb.set_trace()
-    videos = os.listdir(recording_path)
+
+    '''
+    Handle two different cases
+    Case 1: recording_paths is a list of file paths to videos
+    Case 2: recording_paths is a directory of videos (this was the original use)
+    '''
+
+    # Case 1:
+    if isinstance(recording_path, list):
+        for rp in recording_path:
+            assert os.path.isfile(rp), f'recording path ({rp}) does not exist'
+        videos = recording_path  # These are full paths
+
+    # Case 2:
+    elif isinstance(recording_path, str):
+        assert os.path.isdir(recording_path), f'params.recording_paths ({recording_path}) does not exist'
+        videos = [os.path.join(recording_path, f)
+                   for f in os.listdir(recording_path) if f.endswith('.mp4')]  # These are full paths
+
     video_paths = []
     for i, camera in enumerate(reproTool.cameras):
         for video in videos:
-            if camera == video.split('.')[0]:
-                video_paths.append(os.path.join(recording_path, video))
+            vid_name = os.path.basename(video)
+            if camera == vid_name.split('.')[0]:
+                video_paths.append(video)  ## video is the full path now
         assert (len(video_paths) == i+1), \
                     "Missing Recording for camera " + camera
     return video_paths

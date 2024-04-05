@@ -11,6 +11,7 @@ from typing import List
 @dataclass
 class Predict3DParams:
     project_name: str
+    # CR EDIT: this can either be a dir containing videos or a list of paths to each video
     recording_path: str
     weights_center_detect: str = 'latest'
     weights_hybridnet: str = 'latest'
