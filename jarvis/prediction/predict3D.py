@@ -60,7 +60,7 @@ def predict3D(params):
     caps, img_size = create_video_reader(params, reproTool,
                 video_paths)
 
-    # CR EDIT: make the number of frames go only until the end of the SHORTEST CAP so we
+    # Make the number of frames go only until the end of the SHORTEST CAP so we
     # don't have to truncate the vids manually
     frame_counts = [c.get(cv2.CAP_PROP_FRAME_COUNT) for c in caps]
     min_frame_count = frame_counts[0]
@@ -78,10 +78,10 @@ def predict3D(params):
                     "make sure your selected segment is not " \
                     "longer that the total video!"
 
-    csvpath = os.path.join(params.output_dir, f'data3D_{params.trial_num}.csv')
-    print(f"\nCreating file output: {csvpath}\n")
-    csvfile = open(csvpath, 'w', newline='')
-    writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    csvfile = open(os.path.join(params.output_dir, 'data3D.csv'), 'w',
+            newline='')
+    writer = csv.writer(csvfile, delimiter=',',
+                    quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
     #if keypoint names are defined, add header to csvs
     if (len(cfg.KEYPOINT_NAMES) == cfg.KEYPOINTDETECT.NUM_JOINTS):
