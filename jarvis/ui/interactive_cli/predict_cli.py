@@ -7,9 +7,7 @@ Licensed under GNU Lesser General Public License v3.0
 
 import os
 import cv2
-import torch
 import inquirer as inq
-
 from jarvis.config.project_manager import ProjectManager
 from jarvis.utils.utils import CLIColors
 from jarvis.prediction.predict3D import predict3D

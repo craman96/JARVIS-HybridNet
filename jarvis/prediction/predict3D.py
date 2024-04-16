@@ -57,8 +57,7 @@ def predict3D(params):
     #create openCV video read streams
     video_paths = get_video_paths(
                 params.recording_path, reproTool)
-    caps, img_size = create_video_reader(params, reproTool,
-                video_paths)
+    caps, img_size = create_video_reader(params, video_paths)
 
     # Make the number of frames go only until the end of the SHORTEST CAP so we
     # don't have to truncate the vids manually
@@ -123,7 +122,7 @@ def predict3D(params):
     csvfile.close()
 
 
-def create_video_reader(params, reproTool, video_paths):
+def create_video_reader(params, video_paths):
     caps = []
     img_size = [0,0]
     for i, path in enumerate(video_paths):
