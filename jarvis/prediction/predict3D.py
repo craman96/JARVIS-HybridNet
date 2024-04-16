@@ -140,11 +140,14 @@ def create_video_reader(params, video_paths):
 
 def get_video_paths(recording_path, reproTool):
 
-    '''
-    Handle two different cases
+    """
+    Gather the full paths to videos for two different cases
     Case 1: recording_paths is a list of file paths to videos
     Case 2: recording_paths is a directory of videos (this was the original use)
-    '''
+
+    Returns:
+        list[str]: A list of paths to the video to analyze
+    """
 
     # Case 1:
     if isinstance(recording_path, list):
@@ -154,9 +157,11 @@ def get_video_paths(recording_path, reproTool):
 
     # Case 2:
     elif isinstance(recording_path, str):
-        assert os.path.isdir(recording_path), f'params.recording_paths ({recording_path}) does not exist'
+        assert os.path.isdir(recording_path), (f'params.recording_paths ({recording_path})
+                                                does not exist')
+        # These are full paths
         videos = [os.path.join(recording_path, f)
-                   for f in os.listdir(recording_path) if f.endswith('.mp4')]  # These are full paths
+                   for f in os.listdir(recording_path) if f.endswith('.mp4')]
 
     video_paths = []
     for i, camera in enumerate(reproTool.cameras):
@@ -166,11 +171,12 @@ def get_video_paths(recording_path, reproTool):
                 video_paths.append(video)  ## video is the full path now
         assert (len(video_paths) == i+1), \
                     "Missing Recording for camera " + camera
+
     return video_paths
 
 
 def read_images(cap, slice, imgs):
-    ret, img = cap.read()
+    _, img = cap.read()
     imgs[slice] = img.astype(np.uint8)
 
 
