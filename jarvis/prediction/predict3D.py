@@ -5,23 +5,18 @@ https://github.com/JARVIS-MoCap/JARVIS-HybridNet
 Licensed under GNU Lesser General Public License v2.1
 """
 
-# Should be able to pass dir struct
-# Session/cameras/cam1,cam2,cam3...camN/trialN/vid.mp4
-
 import os
 import csv
 import itertools
 import numpy as np
 import torch
 import cv2
-import json
 import itertools
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import time
 from ruamel.yaml import YAML
-import pdb
-import pandas as pd
+
 
 from jarvis.utils.reprojection import ReprojectionTool, load_reprojection_tools
 from jarvis.utils.reprojection import get_repro_tool
@@ -29,7 +24,7 @@ from jarvis.config.project_manager import ProjectManager
 from jarvis.prediction.jarvis3D import JarvisPredictor3D
 
 
-def predict3D(params, marker_dir=None, trial_name=None, confidence_threshold=0):
+def predict3D(params):
     #Load project and config
     project = ProjectManager()
     if not project.load(params.project_name):
@@ -43,14 +38,18 @@ def predict3D(params, marker_dir=None, trial_name=None, confidence_threshold=0):
 
     reproTool = get_repro_tool(cfg, params.dataset_name)
 
-    # params.output_dir = os.path.join(project.parent_dir,
-    #             cfg.PROJECTS_ROOT_PATH, params.project_name,
-    #             'predictions', 'predictions3D',
-    #             f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}')
-
-    params.output_dir = os.path.join(
-        params.output_dir,
-          'markers_3D_jarvis')  # THIS OVERWRITES EVERYTIME SINCE NO TIMESTAMP
+    # Check if output dir not assigned
+    if params.output_dir == "":
+        params.output_dir = os.path.join(project.parent_dir,
+                    cfg.PROJECTS_ROOT_PATH, params.project_name,
+                    'predictions', 'predictions3D',
+                    f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}')
+    # If it is assigned build path to output
+    else:
+        params.output_dir = os.path.join(
+            params.output_dir,
+            f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}'
+        )
 
     os.makedirs(params.output_dir, exist_ok = True)
     create_info_file(params)
@@ -122,25 +121,6 @@ def predict3D(params, marker_dir=None, trial_name=None, confidence_threshold=0):
     for cap in caps:
         cap.release()
     csvfile.close()
-
-    # If this is the case we write a new csv to the markers 3d Folder
-    write_sik_df = marker_dir is not None and trial_name is not None
-    if write_sik_df:
-        original_fname = os.path.join(params.output_dir, 'data3D.csv')
-        assert os.path.isfile(original_fname)
-        df = pd.read_csv(params.out)
-        savepath = os.path.join(marker_dir, f'{trial_name}.csv')
-        # Insert a column for coordinates
-        df['bodyparts'] = ['coords', ] + [i for i in range(len(df))][:-1]
-        # Iterate over each body part column
-        for col in df.columns:
-            # Check if the column name ends with '.3' (assuming it contains the confidence values)
-            if col.endswith('.3'):
-                # Replace values with confidence less than the threshold with NaN
-                df.loc[df[col] < confidence_threshold, col[:-2]] = float('nan')
-                # Remove the corresponding .3 column
-                df.drop(col, axis=1, inplace=True)
-        df.to_csv(savepath)
 
 
 def create_video_reader(params, reproTool, video_paths):
