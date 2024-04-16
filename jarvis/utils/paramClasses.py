@@ -6,13 +6,13 @@ Licensed under GNU Lesser General Public License v2.1
 """
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Union
 
 @dataclass
 class Predict3DParams:
     project_name: str
-    # CR EDIT: this can either be a dir containing videos or a list of paths to each video
-    recording_path: str
+    # This can either be a dir containing videos or a list of paths to each video
+    recording_path: Union[str, list]
     weights_center_detect: str = 'latest'
     weights_hybridnet: str = 'latest'
     frame_start: int = 0
