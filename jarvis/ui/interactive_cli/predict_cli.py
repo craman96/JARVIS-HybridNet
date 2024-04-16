@@ -154,7 +154,7 @@ def predict_3D():
 
 
 
-def get_frame_start_number(video_path, predict_full=None, use_trt=None):
+def get_frame_start_number(video_path, predict_full=None):
 
     if predict_full is None:
         predict_full = inq.list_input("Predict for the whole video?",
