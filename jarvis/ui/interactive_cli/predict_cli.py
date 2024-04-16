@@ -192,10 +192,8 @@ def get_frame_start_number(video_path, predict_full=None):
     return frame_start, number_frames
 
 
-
 def check_trt_config(cfg):
     return True
-
 
 
 def get_trt_mode(cfg, mode, use_trt=None):
