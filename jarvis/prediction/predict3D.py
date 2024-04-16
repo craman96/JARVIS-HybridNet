@@ -125,7 +125,7 @@ def predict3D(params):
 def create_video_reader(params, video_paths):
     caps = []
     img_size = [0,0]
-    for i, path in enumerate(video_paths):
+    for path in video_paths:
         cap = cv2.VideoCapture(path)
         cap.set(1,params.frame_start)
         img_size_new = [int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
