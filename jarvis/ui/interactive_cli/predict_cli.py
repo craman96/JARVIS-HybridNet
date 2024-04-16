@@ -22,7 +22,6 @@ def cls():
     os.system('cls' if os.name=='nt' else 'clear')
 
 
-
 def launch_prediction_menu():
     prediction_menu = [
       inq.List('menu',
@@ -155,10 +154,18 @@ def predict_3D():
 
 
 
-def get_frame_start_number(video_path):
-    # predict_full = inq.list_input("Predict for the whole video?",
-    #             choices=["Yes", "No"])
-    predict_full = "Yes"
+def get_frame_start_number(video_path, predict_full=None, use_trt=None):
+
+    if predict_full is None:
+        predict_full = inq.list_input("Predict for the whole video?",
+                    choices=["Yes", "No"])
+    elif predict_full == True:
+        predict_full = "Yes"
+    elif predict_full == False:
+        predict_full = "No"
+    else:
+        raise ValueError(f"kwarg predict_full must be True | False | None but got {predict_full}")
+
     if predict_full == "Yes":
         frame_start = 0
         number_frames = -1
@@ -191,17 +198,24 @@ def check_trt_config(cfg):
 
 
 
-def get_trt_mode(cfg, mode):
+def get_trt_mode(cfg, mode, use_trt=None):
     if mode == "2D":
         pt_file_count = 2
         model_dir = "predict2D"
     elif mode == "3D":
         pt_file_count = 3
         model_dir = "predict3D"
-    # use_trt = inq.list_input("Use TensorRT acceleration?",
-    #             choices=["Yes", "No"], default = "No")
-    # CR Edited
-    use_trt = "No"
+
+    if use_trt is None:
+        use_trt = inq.list_input("Use TensorRT acceleration?",
+                    choices=["Yes", "No"], default = "No")
+    elif use_trt == True:
+        use_trt = "Yes"
+    elif use_trt == False:
+        use_trt = "No"
+    else:
+        raise ValueError(f"kwarg use_trt must be True | False | None but got {use_trt}")
+
     if use_trt == "Yes":
         search_path = os.path.join(cfg.PARENT_DIR, 'projects',
         cfg.PROJECT_NAME, 'trt-models', model_dir)
