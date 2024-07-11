@@ -14,14 +14,14 @@ import torch.nn as nn
 
 
 class ReprojectionTool(nn.Module):
-    def __init__(self, root_dir = None, calib_paths = None, device = 'cuda',
-                 calib_paths_global=False):
+    def __init__(self, root_dir = None, calib_paths = None, device = 'cuda'):
         super(ReprojectionTool, self).__init__()
         self.device = device
-        if calib_paths != None:
+        if calib_paths is not None:
             self.cameras = {}
             for camera in calib_paths:
-                if calib_paths_global:
+                if root_dir is None:
+                    # using as global paths
                     self.cameras[camera] = TorchCamera(
                         camera, calib_paths[camera], device)
                 else:
