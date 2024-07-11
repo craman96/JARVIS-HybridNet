@@ -8,6 +8,7 @@ Licensed under GNU Lesser General Public License v3.0
 import os
 import cv2
 import inquirer as inq
+
 from jarvis.config.project_manager import ProjectManager
 from jarvis.utils.utils import CLIColors
 from jarvis.prediction.predict3D import predict3D
@@ -153,16 +154,13 @@ def predict_3D():
 
 
 def get_frame_start_number(video_path, predict_full=None):
-
     if predict_full is None:
         predict_full = inq.list_input("Predict for the whole video?",
-                    choices=["Yes", "No"])
-    elif predict_full == True:
+            choices=["Yes", "No"])
+    elif predict_full:
         predict_full = "Yes"
-    elif predict_full == False:
-        predict_full = "No"
     else:
-        raise ValueError(f"kwarg predict_full must be True | False | None but got {predict_full}")
+        predict_full = "No"
 
     if predict_full == "Yes":
         frame_start = 0
@@ -205,12 +203,10 @@ def get_trt_mode(cfg, mode, use_trt=None):
     if use_trt is None:
         use_trt = inq.list_input("Use TensorRT acceleration?",
                     choices=["Yes", "No"], default = "No")
-    elif use_trt == True:
+    elif use_trt:
         use_trt = "Yes"
-    elif use_trt == False:
-        use_trt = "No"
     else:
-        raise ValueError(f"kwarg use_trt must be True | False | None but got {use_trt}")
+        use_trt = "No"
 
     if use_trt == "Yes":
         search_path = os.path.join(cfg.PARENT_DIR, 'projects',

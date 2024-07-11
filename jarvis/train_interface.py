@@ -59,9 +59,9 @@ def train_efficienttrack(mode, project_name, num_epochs, weights,
     if 'run_name' in kwargs:
         run_name = kwargs['run_name']
     if 'bar_desc' in kwargs:
-        bar_desc=kwargs['bar_desc']
+        bar_desc = kwargs['bar_desc']
     if 'bar_position' in kwargs:
-        bar_position=kwargs['bar_position']
+        bar_position = kwargs['bar_position']
     with ExitStack() as stack:
         if streamlitWidgets != None:
             gs = stack.enter_context(st.spinner('Preparing Model for '

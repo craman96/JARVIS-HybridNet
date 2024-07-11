@@ -22,6 +22,7 @@ from jarvis.utils.reprojection import ReprojectionTool, load_reprojection_tools
 from jarvis.utils.reprojection import get_repro_tool
 from jarvis.config.project_manager import ProjectManager
 from jarvis.prediction.jarvis3D import JarvisPredictor3D
+from jarvis.utils.utils import CLIColors
 
 
 def predict3D(params):
@@ -38,18 +39,16 @@ def predict3D(params):
 
     reproTool = get_repro_tool(cfg, params.dataset_name)
 
-    # Check if output dir not assigned
+    # Check if output dir not assigned, make generic
     if params.output_dir == "":
-        params.output_dir = os.path.join(project.parent_dir,
-                    cfg.PROJECTS_ROOT_PATH, params.project_name,
-                    'predictions', 'predictions3D',
-                    f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}')
-    # If it is assigned build path to output
-    else:
         params.output_dir = os.path.join(
-            params.output_dir,
-            f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}'
-        )
+            project.parent_dir, cfg.PROJECTS_ROOT_PATH, params.project_name,
+            'predictions', 'predictions3D')
+    # Add timestamped subdirectory
+    params.output_dir = os.path.join(
+        params.output_dir,
+        f'Predictions_3D_{time.strftime("%Y%m%d-%H%M%S")}'
+    )
 
     os.makedirs(params.output_dir, exist_ok = True)
     create_info_file(params)
@@ -61,13 +60,12 @@ def predict3D(params):
 
     # Make the number of frames go only until the end of the SHORTEST CAP so we
     # don't have to truncate the vids manually
-    frame_counts = [c.get(cv2.CAP_PROP_FRAME_COUNT) for c in caps]
-    min_frame_count = frame_counts[0]
+    frame_counts = [int(c.get(cv2.CAP_PROP_FRAME_COUNT)) for c in caps]
+    min_frame_count = min(frame_counts)
     if frame_counts.count(frame_counts[0]) != len(frame_counts):
         # Then there are varying frame lens
-        min_frame_count = int(min(frame_counts))
-        print("Varying frame lengths found only analyzing up to the shortest" \
-               f" vid (n frames = {min_frame_count})")
+        print(f'{CLIColors.WARNING}Varying frame lengths found only analyzing up to the shortest'
+              f' vid (n frames = {min_frame_count}).{CLIColors.ENDC}')
 
     if (params.number_frames == -1):
         params.number_frames = min_frame_count - params.frame_start
@@ -78,7 +76,7 @@ def predict3D(params):
                     "longer that the total video!"
 
     csvfile = open(os.path.join(params.output_dir, 'data3D.csv'), 'w',
-            newline='')
+                   newline='')
     writer = csv.writer(csvfile, delimiter=',',
                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
@@ -139,7 +137,6 @@ def create_video_reader(params, video_paths):
 
 
 def get_video_paths(recording_path, reproTool):
-
     """
     Gather the full paths to videos for two different cases
     Case 1: recording_paths is a list of file paths to videos
@@ -157,20 +154,23 @@ def get_video_paths(recording_path, reproTool):
 
     # Case 2:
     elif isinstance(recording_path, str):
-        assert os.path.isdir(recording_path), (f'params.recording_paths ({recording_path})
-                                                does not exist')
+        assert os.path.isdir(recording_path), (f'params.recording_paths ({recording_path})'
+                                               ' does not exist')
         # These are full paths
-        videos = [os.path.join(recording_path, f)
-                   for f in os.listdir(recording_path) if f.endswith('.mp4')]
+        videos = []
+        for f in os.listdir(recording_path):
+            videos.append(os.path.join(recording_path, f))
 
     video_paths = []
     for i, camera in enumerate(reproTool.cameras):
         for video in videos:
             vid_name = os.path.basename(video)
-            if camera == vid_name.split('.')[0]:
-                video_paths.append(video)  ## video is the full path now
-        assert (len(video_paths) == i+1), \
-                    "Missing Recording for camera " + camera
+            # video is the full path now
+            # no need to add duplicates - other info
+            if camera == os.path.splitext(vid_name)[0]:
+                video_paths.append(video)
+                break  # only taking first per camera
+        assert (len(video_paths) == i+1), "Missing Recording for camera " + camera
 
     return video_paths
 
